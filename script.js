@@ -1,46 +1,55 @@
-/* =============================================================================
-   Troy Jennings — Resume site behavior
-   - Reveals sections on scroll (and fills skill bars when they appear)
-   - Highlights the active sidebar link as you scroll
-   ============================================================================= */
-
+/* Troy Jennings — portfolio interactions */
 (function () {
   'use strict';
 
-  // ---- scroll reveals + skill bar fill ----
-  const io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (!entry.isIntersecting) return;
-      entry.target.classList.add('in');
-      // fill any skill bars inside this section to their target width
-      entry.target.querySelectorAll('.bar i').forEach(function (bar) {
-        bar.style.width = bar.dataset.w;
+  var revealTargets = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function (entries, observer) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('in');
+        observer.unobserve(entry.target);
       });
-      io.unobserve(entry.target);
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    revealTargets.forEach(function (target) {
+      revealObserver.observe(target);
     });
-  }, { threshold: 0.18 });
-
-  document.querySelectorAll('.reveal').forEach(function (el) {
-    io.observe(el);
-  });
-
-  // ---- active nav highlight on scroll ----
-  const ids = ['intro', 'profile', 'experience', 'education', 'skills', 'interests', 'contact'];
-  const links = Array.prototype.slice.call(document.querySelectorAll('nav.side a'));
-  const sections = ids.map(function (id) { return document.getElementById(id); });
-
-  function updateActiveLink() {
-    let current = ids[0];
-    sections.forEach(function (section, i) {
-      if (section && section.getBoundingClientRect().top < window.innerHeight * 0.45) {
-        current = ids[i];
-      }
-    });
-    links.forEach(function (link) {
-      link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  } else {
+    revealTargets.forEach(function (target) {
+      target.classList.add('in');
     });
   }
 
-  window.addEventListener('scroll', updateActiveLink, { passive: true });
-  updateActiveLink();
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.top-nav a'));
+  var sectionIds = navLinks.map(function (link) {
+    return link.getAttribute('href').replace('#', '');
+  });
+  var sections = sectionIds.map(function (id) {
+    return document.getElementById(id);
+  });
+
+  function updateActiveNavigation() {
+    var activeId = '';
+    sections.forEach(function (section, index) {
+      if (!section) return;
+      if (section.getBoundingClientRect().top <= window.innerHeight * 0.35) {
+        activeId = sectionIds[index];
+      }
+    });
+
+    navLinks.forEach(function (link) {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + activeId);
+    });
+  }
+
+  window.addEventListener('scroll', updateActiveNavigation, { passive: true });
+  updateActiveNavigation();
+
+  Array.prototype.slice.call(document.querySelectorAll('[data-print]')).forEach(function (button) {
+    button.addEventListener('click', function () {
+      window.print();
+    });
+  });
 })();
